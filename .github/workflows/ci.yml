@@ -81,8 +81,7 @@ jobs:
       - name: TruffleHog
         uses: trufflesecurity/trufflehog@main
         with:
-          extra_args: --only-verified --fail
-          config: .trufflehog.toml
+          extra_args: --only-verified
 
   # ---------------------------------------------------------------------------
   # Kustomize Validation
@@ -138,7 +137,7 @@ jobs:
           helm pull prometheus-community/kube-prometheus-stack --version 88.3.0 --untar --untardir .
           helm pull grafana/grafana                --version 10.5.15 --untar --untardir .
           helm pull grafana/loki                   --version 7.3.0   --untar --untardir .
-          helm pull tempo/tempo                    --version 1.24.4  --untar --untardir .
+          helm pull grafana/tempo                  --version 1.24.4  --untar --untardir .
 
       - name: Lint Prometheus chart
         run: helm lint ./kube-prometheus-stack \

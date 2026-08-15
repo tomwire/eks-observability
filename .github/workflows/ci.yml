@@ -96,7 +96,7 @@ jobs:
 
       - name: Install Kustomize
         run: |
-          curl -sL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/${{ env.KUSTOMIZE_VERSION }}/kustomize_${{ env.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz" | tar xz
+          curl -sL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/v${{ env.KUSTOMIZE_VERSION }}/kustomize_v${{ env.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz" | tar xz
           mv kustomize /usr/local/bin/
 
       # Note: overlays use PLACEHOLDER values — build validates structure only

@@ -1,0 +1,274 @@
+# =============================================================================
+# EKS Observability Stack - ArgoCD Application Resources
+#
+# Each component is deployed as an ArgoCD Application with its own values file.
+# ArgoCD handles Helm chart installation, upgrades, and self-healing sync.
+#
+# All charts are pulled from community helm repos; no local chart management needed.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Prometheus (Prometheus Operator / kube-prometheus-stack)
+# ---------------------------------------------------------------------------
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prometheus
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  project: default
+  source:
+    repoURL: https://prometheus-community.github.io/helm-charts
+    targetRevision: 61.10.0
+    chart: kube-prometheus-stack
+    helm:
+      releaseName: prometheus
+      valueFiles:
+        - ../../k8s-manifests/prometheus/values.yaml
+    postRenderers:
+      - kustomize:
+          paths:
+            - ../../k8s-manifests/alerting-rules.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: prometheus
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+# ---------------------------------------------------------------------------
+# Grafana
+# ---------------------------------------------------------------------------
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: grafana
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 8.6.0
+    chart: grafana
+    helm:
+      releaseName: grafana
+      valueFiles:
+        - ../../k8s-manifests/grafana/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: grafana
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+# ---------------------------------------------------------------------------
+# Loki
+# ---------------------------------------------------------------------------
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: loki
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 6.26.0
+    chart: loki
+    helm:
+      releaseName: loki
+      valueFiles:
+        - ../../k8s-manifests/loki/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: loki
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+# ---------------------------------------------------------------------------
+# Tempo
+# ---------------------------------------------------------------------------
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: tempo
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  project: default
+  source:
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 1.8.0
+    chart: tempo
+    helm:
+      releaseName: tempo
+      valueFiles:
+        - ../../k8s-manifests/tempo/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: tempo
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+# ---------------------------------------------------------------------------
+# FluentBit — Log collection DaemonSet
+# ---------------------------------------------------------------------------
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: fluentbit
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/component: logging
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  project: default
+  source:
+    repoURL: https://fluent.github.io/helm-charts
+    targetRevision: 0.31.0
+    chart: fluent-bit
+    helm:
+      releaseName: fluent-bit
+      valueFiles:
+        - ../../k8s-manifests/fluentbit/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: fluentbit
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+# ---------------------------------------------------------------------------
+# cert-manager — TLS certificate automation
+# ---------------------------------------------------------------------------
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: cert-manager
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: cert-manager
+    app.kubernetes.io/component: security
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  project: default
+  source:
+    repoURL: https://charts.jetstack.io
+    targetRevision: 1.15.0
+    chart: cert-manager
+    helm:
+      releaseName: cert-manager
+      valueFiles:
+        - ../../k8s-manifests/cert-manager/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cert-manager
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+# ---------------------------------------------------------------------------
+# Ingress-NGINX — External access + TLS termination
+# ---------------------------------------------------------------------------
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: ingress-nginx
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes.github.io/ingress-nginx
+    targetRevision: 4.11.0
+    chart: ingress-nginx
+    helm:
+      releaseName: ingress-nginx
+      valueFiles:
+        - ../../k8s-manifests/ingress/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: ingress-nginx
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+
+# ---------------------------------------------------------------------------
+# Metrics Server — HPA, kubectl top support
+# ---------------------------------------------------------------------------
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: metrics-server
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: metrics-server
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  project: default
+  source:
+    repoURL: https://kubernetes-sigs.github.io/metrics-server
+    targetRevision: 3.12.0
+    chart: metrics-server
+    helm:
+      releaseName: metrics-server
+      valueFiles:
+        - ../../k8s-manifests/metrics/values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: kube-system
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

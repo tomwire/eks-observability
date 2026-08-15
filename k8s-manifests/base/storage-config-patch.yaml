@@ -1,0 +1,12 @@
+# =============================================================================
+# Kustomize Base — Storage config placeholder (patched per environment)
+# =============================================================================
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: storage-config
+data:
+  prometheus-s3-bucket: PLACEHOLDER_PROMETHEUS_BUCKET
+  loki-s3-bucket: PLACEHOLDER_LOKI_BUCKET
+  tempo-s3-bucket: PLACEHOLDER_TEMPO_BUCKET

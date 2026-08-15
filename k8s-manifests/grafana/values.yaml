@@ -1,0 +1,69 @@
+# =============================================================================
+# Grafana - Base Values
+# =============================================================================
+replicas: 2
+admin:
+  existingSecret: grafana-admin-credentials
+  userKey: admin-user
+  passwordKey: admin-password
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        access: proxy
+        url: http://prometheus-server.prometheus.svc.cluster.local:9090
+        isDefault: true
+        editable: false
+      - name: Loki
+        type: loki
+        access: proxy
+        url: http://loki-gateway.loki.svc.cluster.local:3100
+        editable: false
+      - name: Tempo
+        type: tempo
+        access: proxy
+        url: http://tempo-query-frontend.tempo.svc.cluster.local:3100
+        editable: false
+dashboards:
+  default:
+    dashboards:
+      - name: EKS Cluster Overview
+        gnetId: 7244
+        revision: 1
+        datasource: Prometheus
+      - name: Kubernetes Compute Resources
+        gnetId: 15761
+        revision: 3
+        datasource: Prometheus
+      - name: Kubernetes Networking
+        gnetId: 13105
+        revision: 4
+        datasource: Prometheus
+      - name: Loki Logs
+        gnetId: 15983
+        revision: 1
+        datasource: Loki
+      - name: Tempo Traces
+        gnetId: 16977
+        revision: 1
+        datasource: Tempo
+service:
+  type: ClusterIP
+  port: 80
+resources:
+  requests:
+    cpu: 250m
+    memory: 512Mi
+  limits:
+    cpu: 1000m
+    memory: 1Gi
+persistence:
+  enabled: true
+  storageClassName: gp3
+  size: 10Gi
+securityContext:
+  runAsUser: 472
+  runAsGroup: 472
+  fsGroup: 472

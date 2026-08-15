@@ -1,0 +1,30 @@
+# =============================================================================
+# EKS Observability Stack
+# =============================================================================
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfplan
+
+# AWS
+*.key
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Terraform logs
+*.log
+
+# Helm
+helm-history.yaml

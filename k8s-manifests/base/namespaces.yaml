@@ -1,0 +1,59 @@
+# =============================================================================
+# Kustomize Base — Namespace definitions
+# =============================================================================
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prometheus
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: eks-observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: grafana
+  labels:
+    app.kubernetes.io/name: grafana
+    app.kubernetes.io/part-of: eks-observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: loki
+  labels:
+    app.kubernetes.io/name: loki
+    app.kubernetes.io/part-of: eks-observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: tempo
+  labels:
+    app.kubernetes.io/name: tempo
+    app.kubernetes.io/part-of: eks-observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: alertmanager
+  labels:
+    app.kubernetes.io/name: alertmanager
+    app.kubernetes.io/part-of: eks-observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ingress-nginx
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: eks-observability
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: fluentbit
+  labels:
+    app.kubernetes.io/name: fluent-bit
+    app.kubernetes.io/part-of: eks-observability

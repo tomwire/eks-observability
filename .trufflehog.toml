@@ -1,0 +1,15 @@
+# =============================================================================
+# TruffleHog Secret Scanning Configuration
+# =============================================================================
+
+fail: true
+only_verified: true
+
+# Exclude known false-positive paths
+exclude_paths:
+  - "k8s-manifests/overlays/*"
+
+# Scan all file types
+filters:
+  - regex: 'PLACEHOLDER_[A-Z_]+'
+    description: "Skip Helm values placeholders"

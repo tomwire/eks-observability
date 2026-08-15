@@ -1,0 +1,66 @@
+# =============================================================================
+# cert-manager — Helm Values (cert-manager/cert-manager)
+#
+# Provisions TLS certificates for observability ingress endpoints via
+# ACM (AWS) or Let's Encrypt. Configured with ClusterIssuer for automated
+# certificate management on the EKS cluster.
+# =============================================================================
+
+installCRDs: true
+
+replicaCount: 2
+
+prometheus:
+  enabled: true
+  servicemonitor:
+    enabled: true
+
+leaderElectro: true
+
+webhook:
+  replicaCount: 2
+  timeoutSeconds: 10
+
+cainjector:
+  replicaCount: 2
+
+extraArgs:
+  - --default-issuer-name=letsencrypt-prod
+  - --default-issuer-clustername=eks-observability
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+# ---------------------------------------------------------------------------
+# ClusterIssuer — Let's Encrypt (production)
+# ---------------------------------------------------------------------------
+
+clusterissuers:
+  - name: letsencrypt-prod
+    spec:
+      acme:
+        server: https://acme-v02.api.letsencrypt.org/directory
+        email: admin@example.com
+        privateKeySecretRef:
+          name: letsencrypt-prod-key
+        solvers:
+          - http01:
+              ingress:
+                class: nginx
+
+  - name: letsencrypt-staging
+    spec:
+      acme:
+        server: https://acme-staging-v02.api.letsencrypt.org/directory
+        email: admin@example.com
+        privateKeySecretRef:
+          name: letsencrypt-staging-key
+        solvers:
+          - http01:
+              ingress:
+                class: nginx

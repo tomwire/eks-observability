@@ -1,0 +1,96 @@
+# =============================================================================
+# FluentBit — Helm Values (fluent/fluent-bit)
+#
+# Collects container logs from all pods across the EKS cluster and forwards
+# them to Loki via its gateway HTTP endpoint. Uses Kubernetes pod annotations
+# for log routing (exclude annotations, multiline handling).
+#
+# Works alongside enterprise-terraform-aws: reads cluster metadata from
+# environment variables set by Terraform outputs.
+# =============================================================================
+
+fluentBit:
+  service:
+    type: ClusterIP
+    port: 2020
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+outputLoki:
+  enabled: true
+  host: loki-gateway.loki.svc.cluster.local
+  port: 3100
+  namespace: loki
+  httpUser: ""
+  httpPasswd: ""
+  tls: false
+  logFormat: json
+  multiMode: false
+
+inputKubernetes:
+  enabled: true
+  bufferSize: "5M"
+  memBufLimit: 50M
+  kubeURL: https://kubernetes.default.svc:443
+  kubeCAFile: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+  kubeTokenFile: /var/run/secrets/kubernetes.io/serviceaccount/token
+  rotateLogs: true
+  bufferMaxSize: "5M"
+  annotations: ""
+  excludeLabels: ""
+
+inputTail:
+  enabled: true
+  path: /var/log/containers/*.log
+  db: /var/log/flb_kube.db
+  multilineParser: docker, cri
+
+filterKubernetes:
+  enabled: true
+  kubeURL: https://kubernetes.default.svc:443
+  k8s-logging.parser: "true"
+  k8s-logging.exclude: "false"
+  merge_log_key: "log_processed"
+  use_kubelet: true
+  kubelet_port: "10250"
+  buffer_size: "100k"
+
+extraParsers: |-
+  [PARSER]
+      Name    docker_no_time
+      Format  json
+      Time_Keep Off
+      Time_Key time
+      Time_Format %Y-%m-%dT%H:%M:%S.%LZ
+
+serviceAccount:
+  create: true
+  name: fluent-bit
+  annotations: {}
+
+securityContext:
+  runAsUser: 0
+  fsGroup: 0
+
+rbac:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources:
+        - namespaces
+        - pods
+        - pods/logs
+      verbs: ["get", "list", "watch"]
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi

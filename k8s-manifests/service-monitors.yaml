@@ -1,0 +1,129 @@
+# =============================================================================
+# EKS Observability Stack - ServiceMonitors
+#
+# Prometheus Operator discovers metrics endpoints from workloads running on
+# the cluster. Each ServiceMonitor selects pods by label and scrapes their
+# /metrics endpoint at the configured interval.
+#
+# These are consumed by kube-prometheus-stack (the prometheus Helm chart)
+# which automatically creates scrape configs from matching ServiceMonitors.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Application workload — generic service monitor template
+# (Deploy this pattern for each application namespace)
+# ---------------------------------------------------------------------------
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: app-workloads
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  selector:
+    matchLabels:
+      monitoring: "true"
+  namespaceSelector:
+    matchNames:
+      - default
+      - production
+      - staging
+  endpoints:
+    - port: http-metrics
+      interval: 15s
+      path: /metrics
+      scrapeTimeout: 10s
+
+---
+# ---------------------------------------------------------------------------
+# Node Exporter — system-level metrics from EKS nodes
+# (Already enabled in prometheus values.yaml via nodeExporter.enabled)
+# ---------------------------------------------------------------------------
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: node-exporter
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/name: node-exporter
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: node-exporter
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics
+
+---
+# ---------------------------------------------------------------------------
+# kube-state-metrics — Kubernetes resource metrics
+# (Already enabled in prometheus values.yaml via kubeStateMetrics.enabled)
+# ---------------------------------------------------------------------------
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: kube-state-metrics
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/name: kube-state-metrics
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: kube-state-metrics
+  endpoints:
+    - port: http-metric
+      interval: 30s
+
+---
+# ---------------------------------------------------------------------------
+# Ingress-NGINX controller metrics
+# ---------------------------------------------------------------------------
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: ingress-nginx
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/name: ingress-nginx
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+  endpoints:
+    - port: metrics
+      interval: 15s
+      path: /metrics
+
+---
+# ---------------------------------------------------------------------------
+# Prometheus self-monitoring
+# ---------------------------------------------------------------------------
+
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: prometheus-self
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: eks-observability
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  endpoints:
+    - port: web
+      interval: 15s
+      path: /metrics
+      tlsConfig:
+        insecureSkipVerify: true

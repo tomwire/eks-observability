@@ -1,0 +1,193 @@
+# =============================================================================
+# EKS Observability Stack - Alerting Rules
+#
+# Prometheus recording and alerting rules covering infrastructure health,
+# application performance, and observability platform availability.
+# Organized by category for easy review during interviews.
+#
+# These are consumed by kube-prometheus-stack (the prometheus Helm chart)
+# via the prometheus.prometheusSpec.ruleSelector selector.
+# =============================================================================
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: observability-alerts
+  namespace: prometheus
+  labels:
+    app.kubernetes.io/part-of: eks-observability
+    release: prometheus
+spec:
+  groups:
+    # =========================================================================
+    # Infrastructure Alerts — EKS cluster & node health
+    # =========================================================================
+    - name: infrastructure.rules
+      rules:
+        - alert: NodeNotReady
+          expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Node {{ $labels.node }} is not ready"
+            description: "Kubernetes node {{ $labels.node }} has been NotReady for more than 5 minutes."
+
+        - alert: HighCPUUsage
+          expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU on {{ $labels.instance }}"
+            description: "CPU usage is above 85% for more than 10 minutes."
+
+        - alert: HighMemoryUsage
+          expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 90
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High memory on {{ $labels.instance }}"
+            description: "Memory usage is above 90% for more than 10 minutes."
+
+        - alert: DiskPressure
+          expr: node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100 < 15
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Low disk space on {{ $labels.instance }}"
+            description: "Less than 15% disk available on root filesystem."
+
+        - alert: EKSNodegroupDrift
+          expr: kube_node_spec_max_pods - kube_node_status_allocatable_pods < 2
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "EKS node group near pod capacity"
+            description: "Node has fewer than 2 allocatable pods remaining."
+
+    # =========================================================================
+    # Application Alerts — workload health
+    # =========================================================================
+    - name: application.rules
+      rules:
+        - alert: PodCrashLooping
+          expr: rate(kube_pod_container_status_restarts_total[15m]) * 60 * 5 > 0
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} crash looping"
+            description: "Pod is restarting frequently — check logs and resource limits."
+
+        - alert: HighErrorRate
+          expr: sum(rate(http_requests_total{status=~"5.."}[5m])) by(namespace, service) / sum(rate(http_requests_total[5m])) by(namespace, service) > 0.05
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High error rate on {{ $labels.service }}"
+            description: "Service in {{ $labels.namespace }} has >5% 5xx errors."
+
+        - alert: PodPending
+          expr: kube_pod_status_phase{phase="Pending"} > 0
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} stuck pending"
+            description: "Pod has been in Pending state for more than 10 minutes."
+
+        - alert: DeploymentReplicasMismatch
+          expr: kube_deployment_spec_replicas != kube_deployment_status_ready_replicas
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} replicas mismatch"
+            description: "Ready replicas don't match desired replicas."
+
+    # =========================================================================
+    # Observability Platform Alerts — stack health
+    # =========================================================================
+    - name: observability-platform.rules
+      rules:
+        - alert: PrometheusTargetDown
+          expr: up == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Prometheus target {{ $labels.job }}/{{ $labels.instance }} down"
+            description: "A Prometheus scrape target has been down for more than 5 minutes."
+
+        - alert: AlertmanagerDown
+          expr: up{job="alertmanager-main"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Alertmanager is down"
+            description: "The Alertmanager service is not reachable."
+
+        - alert: PrometheusRuleEvaluationFailures
+          expr: increase(prometheus_rule_evaluation_failures_total[5m]) > 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Prometheus rule evaluation failures"
+            description: "Prometheus is failing to evaluate rules — check syntax and label selectors."
+
+        - alert: LokiTargetDown
+          expr: up{job="loki"} == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Loki target down"
+            description: "Loki is not scraping targets — logs may be incomplete."
+
+        - alert: GrafanaDown
+          expr: up{job="grafana"} == 0
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Grafana is down"
+            description: "The Grafana service is not reachable."
+
+        - alert: HighIngestionLatency
+          expr: histogram_quantile(0.99, sum(rate(loki_request_duration_seconds_bucket[5m])) by (le, handler)) > 2
+          for: 10m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High Loki ingestion latency"
+            description: "99th percentile request latency above 2 seconds."
+
+    # =========================================================================
+    # Storage Alerts — S3 backend health (via metrics)
+    # =========================================================================
+    - name: storage.rules
+      rules:
+        - alert: S3BucketApproachingLimit
+          expr: aws_s3_bucket_object_count / aws_s3_bucket_size_bytes * 100 > 80
+          for: 30m
+          labels:
+            severity: warning
+          annotations:
+            summary: "S3 bucket {{ $labels.bucket }} approaching storage limit"
+            description: "Bucket is using more than 80% of allocated storage."
+
+        - alert: RemoteWriteDroppedSamples
+          expr: rate(prometheus_remote_storage_dropped_samples_total[5m]) > 0
+          for: 10m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Prometheus remote write dropping samples"
+            description: "Samples are being dropped during remote write — check S3 connectivity."

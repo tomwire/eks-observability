@@ -1,0 +1,19 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: prod-observability
+resources:
+  - ../base
+patches:
+  - target:
+      kind: ConfigMap
+      name: storage-config
+    patch: |-
+      - op: replace
+        path: /data/prometheus-s3-bucket
+        value: PLACEHOLDER_PROMETHEUS_BUCKET
+      - op: replace
+        path: /data/loki-s3-bucket
+        value: PLACEHOLDER_LOKI_BUCKET
+      - op: replace
+        path: /data/tempo-s3-bucket
+        value: PLACEHOLDER_TEMPO_BUCKET

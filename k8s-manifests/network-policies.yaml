@@ -1,0 +1,131 @@
+# =============================================================================
+# EKS Observability Stack - Network Policies
+#
+# Restricts traffic flow between observability components following least-
+# privilege network access patterns. Only required ports are open between
+# services that need to communicate.
+#
+# Applied in each observability namespace.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# Prometheus — accepts metrics scrapes from ServiceMonitors + Alertmanager
+# ---------------------------------------------------------------------------
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-metrics-scrape
+  namespace: prometheus
+spec:
+  podSelector:
+    matchLabels:
+      app.kubernetes.io/name: prometheus
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow Prometheus to scrape itself
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 9090
+    # Allow Alertmanager to push alerts
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              app.kubernetes.io/name: alertmanager
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: alertmanager
+      ports:
+        - protocol: TCP
+          port: 9093
+
+---
+# ---------------------------------------------------------------------------
+# Grafana — accepts traffic from Ingress-NGINX + Prometheus/Loki/Tempo
+# ---------------------------------------------------------------------------
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-grafana-ingress
+  namespace: grafana
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow Ingress controller to reach Grafana
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 80
+    # Allow Grafana to reach internal datasources (no policy block needed,
+    # but documenting the expected outbound flow)
+
+---
+# ---------------------------------------------------------------------------
+# Loki — accepts logs from FluentBit + queries from Ingress gateway
+# ---------------------------------------------------------------------------
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-loki-ingress
+  namespace: loki
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow FluentBit to push logs
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              app.kubernetes.io/name: fluentbit
+      ports:
+        - protocol: TCP
+          port: 3100
+    # Allow query gateway traffic
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 3100
+
+---
+# ---------------------------------------------------------------------------
+# Tempo — accepts traces from OTLP/Jaeger/Zipkin receivers + queries from Ingress
+# ---------------------------------------------------------------------------
+
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-tempo-ingress
+  namespace: tempo
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow OTLP trace ingestion
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 4317   # OTLP gRPC
+        - protocol: TCP
+          port: 4318   # OTLP HTTP
+    # Allow Jaeger/Zipkin ingestion
+    - from:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 14250  # Jaeger gRPC
+        - protocol: TCP
+          port: 9411   # Zipkin

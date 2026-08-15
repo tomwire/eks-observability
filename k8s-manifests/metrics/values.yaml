@@ -1,0 +1,21 @@
+# =============================================================================
+# Metrics Server - Base Values
+# =============================================================================
+args:
+  - --kubelet-insecure-tls
+  - --kubelet-preferred-address-types=InternalIP,ExternalIP,Hostname
+  - --report-node-status
+  - --kubelet-use-node-status-port
+  - --metric-resolution=15s
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 5
+  targetCPUUtilizationPercentage: 80

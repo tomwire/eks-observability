@@ -1,0 +1,41 @@
+# =============================================================================
+# Ingress-NGINX - Base Values
+# =============================================================================
+controller:
+  replicas: 2
+  service:
+    type: LoadBalancer
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-type: external
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: ip
+      service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+      service.beta.kubernetes.io/aws-load-balancer-extra-security-groups: observability
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+  config:
+    use-forwarded-headers: "true"
+    use-proxy-protocol: "false"
+    proxy-body-size: "100m"
+    proxy-read-timeout: "600"
+    proxy-send-timeout: "600"
+    enable-ModSecurity: "false"
+    ssl-redirect: "true"
+    force-ssl-redirect: "true"
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+      namespace: ingress-nginx
+      selector:
+        app.kubernetes.io/name: ingress-nginx
+  defaultSSLCertificate: ""
+  ingressClassResource:
+    name: nginx
+    default: true
+    controllerValue: k8s.io/ingress-nginx

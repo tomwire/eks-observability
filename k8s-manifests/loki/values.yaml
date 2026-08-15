@@ -1,0 +1,65 @@
+# =============================================================================
+# Loki - Base Values
+# =============================================================================
+loki:
+  isDefault: false
+  version: 2.9.0
+  singleBinary:
+    replicas: 1
+  commonConfig:
+    replication_factor: 1
+    path_prefix: /loki
+  storage:
+    type: s3
+    s3:
+      endpoint: PLACEHOLDER_LOKI_S3_ENDPOINT
+      bucketnames: PLACEHOLDER_LOKI_S3_BUCKET
+      access_key_id: PLACEHOLDER_LOKI_S3_ACCESS_KEY
+      secret_access_key: PLACEHOLDER_LOKI_S3_SECRET_KEY
+      s3forcepathstyle: true
+  schemaConfig:
+    configs:
+      - from: "2024-01-01"
+        store: tsdb
+        object_store: s3
+        schema: v13
+        index:
+          prefix: loki_index_
+          period: 24h
+  limits_config:
+    retain_period: 72h
+    max_query_length: 0
+    max_query_parallelism: 32
+    max_entries_limit_per_query: 5000
+  ruler:
+    enable_api: true
+    enable_alertmanager_v1: false
+    storage:
+      type: local
+      local:
+        directory: /rules
+  analyticalStore:
+    enabled: false
+  monitoring:
+    selfMonitoring:
+      enabled: false
+    grafanaAgent:
+      installOperator: false
+  frontend:
+    processor:
+      enabled: true
+      compress_responses: false
+  query_scheduler:
+    max_outstanding_requests_per_tenant: 2048
+  cache:
+    enabled: true
+    cache_controlled_cache: true
+    cache_controlled_cache_ttl: 1h
+  compactor:
+    working_directory: /loki/compactor
+    shared_store: s3
+    compaction_interval: 5m
+    retention_enabled: true
+    retention_deletes_enabled: true
+    retention_delete_delay: 2h
+    retention_delete_worker_count: 150

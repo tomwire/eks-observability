@@ -96,7 +96,7 @@ jobs:
 
       - name: Install Kustomize
         run: |
-          curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
+          curl -sL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize/${{ env.KUSTOMIZE_VERSION }}/kustomize_${{ env.KUSTOMIZE_VERSION }}_linux_amd64.tar.gz" | tar xz
           mv kustomize /usr/local/bin/
 
       # Note: overlays use PLACEHOLDER values — build validates structure only
@@ -140,20 +140,16 @@ jobs:
           helm pull grafana/tempo                  --version 1.24.4  --untar --untardir .
 
       - name: Lint Prometheus chart
-        run: helm lint ./kube-prometheus-stack \
-          --values k8s-manifests/prometheus/values.yaml
+        run: helm lint ./kube-prometheus-stack --values k8s-manifests/prometheus/values.yaml
 
       - name: Lint Grafana chart
-        run: helm lint ./grafana \
-          --values k8s-manifests/grafana/values.yaml
+        run: helm lint ./grafana --values k8s-manifests/grafana/values.yaml
 
       - name: Lint Loki chart
-        run: helm lint ./loki \
-          --values k8s-manifests/loki/values.yaml
+        run: helm lint ./loki --values k8s-manifests/loki/values.yaml
 
       - name: Lint Tempo chart
-        run: helm lint ./tempo \
-          --values k8s-manifests/tempo/values.yaml
+        run: helm lint ./tempo --values k8s-manifests/tempo/values.yaml
 
   # ---------------------------------------------------------------------------
   # Full Pipeline (on main branch push)

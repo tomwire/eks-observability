@@ -1,12 +1,12 @@
 # =============================================================================
 # TruffleHog Secret Scanning Configuration
 # =============================================================================
-
-fail: true
-only_verified: true
-
-# Exclude known false-positive paths
+# Note: GitHub Action (trufflesecurity/trufflehog@main) reads this file.
+# CLI flag --only-verified and --fail are passed via extra_args in ci.yml.
+#
+# Known false-positive paths excluded here for TOML-format trufflehog:
 exclude_paths:
+  - ".git/config"
   - "k8s-manifests/overlays/*"
 
 # Scan all file types

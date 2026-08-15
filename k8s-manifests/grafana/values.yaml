@@ -26,29 +26,10 @@ datasources:
         access: proxy
         url: http://tempo-query-frontend.tempo.svc.cluster.local:3100
         editable: false
+# Dashboards are managed as ConfigMaps (k8s-manifests/argocd/applications.yaml)
+# rather than inline gnetId definitions which require network access at install time.
 dashboards:
-  default:
-    dashboards:
-      - name: EKS Cluster Overview
-        gnetId: 7244
-        revision: 1
-        datasource: Prometheus
-      - name: Kubernetes Compute Resources
-        gnetId: 15761
-        revision: 3
-        datasource: Prometheus
-      - name: Kubernetes Networking
-        gnetId: 13105
-        revision: 4
-        datasource: Prometheus
-      - name: Loki Logs
-        gnetId: 15983
-        revision: 1
-        datasource: Loki
-      - name: Tempo Traces
-        gnetId: 16977
-        revision: 1
-        datasource: Tempo
+  default: {}
 service:
   type: ClusterIP
   port: 80

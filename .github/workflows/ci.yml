@@ -82,6 +82,7 @@ jobs:
         uses: trufflesecurity/trufflehog@main
         with:
           extra_args: --only-verified --fail
+          config: .trufflehog.toml
 
   # ---------------------------------------------------------------------------
   # Kustomize Validation
@@ -99,15 +100,12 @@ jobs:
           curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" | bash
           mv kustomize /usr/local/bin/
 
-      # Note: overlays have PLACEHOLDER values — validation tests structure only
-      - name: Validate overlay structure
+      # Note: overlays use PLACEHOLDER values — build validates structure only
+      - name: Build overlay manifests (dry-run)
         run: |
           for env in dev stage prod; do
-            echo "Checking ${env} overlay..."
-            grep -q "kustomization.yaml" k8s-manifests/overlays/${env}/kustomization.yaml || {
-              echo "FAIL: missing kustomization.yaml for ${env}"
-              exit 1
-            }
+            echo "Building ${env} overlay..."
+            kustomize build k8s-manifests/overlays/${env} --output /dev/null
           done
 
   # ---------------------------------------------------------------------------
@@ -135,20 +133,27 @@ jobs:
           helm repo add fluent https://fluent.github.io/helm-charts
           helm repo add jetstack https://charts.jetstack.io
 
+      - name: Pull Helm charts
+        run: |
+          helm pull prometheus-community/kube-prometheus-stack --version 88.3.0 --untar --untardir .
+          helm pull grafana/grafana                --version 10.5.15 --untar --untardir .
+          helm pull grafana/loki                   --version 7.3.0   --untar --untardir .
+          helm pull tempo/tempo                    --version 1.24.4  --untar --untardir .
+
       - name: Lint Prometheus chart
-        run: helm lint prometheus-community/kube-prometheus-stack \
+        run: helm lint ./kube-prometheus-stack \
           --values k8s-manifests/prometheus/values.yaml
 
       - name: Lint Grafana chart
-        run: helm lint grafana/grafana \
+        run: helm lint ./grafana \
           --values k8s-manifests/grafana/values.yaml
 
       - name: Lint Loki chart
-        run: helm lint loki/loki \
+        run: helm lint ./loki \
           --values k8s-manifests/loki/values.yaml
 
       - name: Lint Tempo chart
-        run: helm lint tempo/tempo \
+        run: helm lint ./tempo \
           --values k8s-manifests/tempo/values.yaml
 
   # ---------------------------------------------------------------------------

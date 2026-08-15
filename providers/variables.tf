@@ -96,8 +96,8 @@ variable "common_tags" {
   description = "Common tags applied to all resources (mirrors enterprise-terraform-aws)"
   type        = map(string)
   default = {
-    Project     = "eks-observability"
-    ManagedBy   = "terraform"
-    CostCenter  = "engineering"
+    Project    = "eks-observability"
+    ManagedBy  = "terraform"
+    CostCenter = "engineering"
   }
 }

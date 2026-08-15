@@ -674,9 +674,9 @@ resource "aws_eks_node_group" "monitoring" {
   }
 
   labels = {
-    "node.kubernetes.io/role"          = "monitoring"
-    "prometheus.io/scrape"             = "true"
-    "eks-observability/node-group"     = "true"
+    "node.kubernetes.io/role"      = "monitoring"
+    "prometheus.io/scrape"         = "true"
+    "eks-observability/node-group" = "true"
   }
 
   taints = {

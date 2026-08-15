@@ -165,6 +165,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "prometheus" {
   rule {
     id     = "expire-old-data"
     status = "Enabled"
+    filter {}
     expiration {
       days = var.prometheus_retention_days
     }
@@ -679,12 +680,10 @@ resource "aws_eks_node_group" "monitoring" {
     "eks-observability/node-group" = "true"
   }
 
-  taints = {
-    observability = {
-      key    = "node.kubernetes.io/role"
-      value  = "monitoring"
-      effect = "PREFER_NO_SCHEDULE"
-    }
+  taint {
+    key    = "node.kubernetes.io/role"
+    value  = "monitoring"
+    effect = "PREFER_NO_SCHEDULE"
   }
 
   tags = {

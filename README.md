@@ -435,4 +435,4 @@ MIT — Feel free to use, modify, and showcase this in your portfolio!
 
 ---
 
-> **Built by [Thomas Wire](https://github.com/twire)** — Showcasing enterprise-grade observability patterns on AWS EKS.
+> **Built by [Thomas Wire](https://github.com/tomwire)** — Showcasing enterprise-grade observability patterns on AWS EKS.
